@@ -42,16 +42,26 @@
     RACSignal *autoButtonSignal = [self.autoLoginButton rac_signalForControlEvents:UIControlEventTouchUpInside];
     
     self.viewModel = [[JDLoginViewModel alloc]initWithDefauleModel];
+    
+    /*可以不做界面初始化
     //根据viewModel初始化界面的值
     self.userNameTextField.text = self.viewModel.username;
     self.passwordTextField.text =  [NSString stringFromBase64String:self.viewModel.password];
     [self.rememberPasswordButton setOn:self.viewModel.isRememberPassword.boolValue];
     [self.autoLoginButton setOn:self.viewModel.isAutoLogin.boolValue];
+    */
     //viewModel 与 界面进行绑定 双向绑定 双向水管
-    RAC(self.viewModel, username) = usernameTextFieldSignal;
-    RAC(self.viewModel,password) = [passwordTextFieldSignal
+    RAC(self.viewModel, username) = [usernameTextFieldSignal
+                                     filter:^BOOL(NSString *value) {
+                                         return value.length>1;
+                                     }];
+    
+    RAC(self.viewModel,password) = [[passwordTextFieldSignal
                                     map:^id(NSString *value) {
                                         return value.base64String;
+                                    }]
+                                    filter:^BOOL(NSString *value) {
+                                        return value.length>1;
                                     }];
     //验证用户密码是否有效,组合水管，单输出，双向绑定
     RAC(self.loginButton,enabled) = [RACSignal combineLatest:@[usernameTextFieldSignal,passwordTextFieldSignal]
